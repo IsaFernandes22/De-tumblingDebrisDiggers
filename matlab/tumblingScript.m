@@ -1,3 +1,4 @@
+% This defines the variables we need for simulink 
 % Define the moments of inertia about each axis
 Jx =J;
 Jy = 1;
