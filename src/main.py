@@ -7,7 +7,7 @@
 import cv2
 import serial
 import time
-import launch
+import dispatch
 
 #set up serial communication with arduino
 COM_PORT = '/dev/ttyUSB0'  # Adjust for setup with prototype (TODO)
