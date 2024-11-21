@@ -22,6 +22,21 @@ TARGET_IP = "192.168.1.100"  # Replace with the IP address of the other computer
 TARGET_PORT = 5000           # Replace with the desired port (TODO)
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP Socket
 
+# Send log to ground station (target ip)
+def send_log(message):
+    """
+    Sends a log message to the hardcoded computer.
+
+    Parameters:
+        message (str): The log message to send.
+    """
+    try:
+        log_message = f"LOG: {message}"
+        sock.sendto(log_message.encode('utf-8'), (TARGET_IP, TARGET_PORT))
+        print(f"Sent log: {log_message}")
+    except Exception as e:
+        print(f"Failed to send log: {e}")
+
 # Initialize Camera
 try:
     cap = dispatch.init_camera()
@@ -34,7 +49,7 @@ print("Camera and serial initialized. Press 'q' to quit.")
 # TODO this is where the dispatch stuff will be analyzed
 
 
-# TODO now lets focus on setting up communication with the main satellite
+# Await for the signal from the arduino to let the target know when the RSO is ready for capture
 
 try:
     while True:
@@ -53,11 +68,11 @@ try:
         break
         
 except KeyboardInterrupt:
-    print("Interrupted by user. Exiting...")
+    send_log("Interrupted by user. Exiting...")
 
 finally:
     #clean up the space
     arduino.close()
     sock.close()
-    print("Done releasing resources. Script finished.")
-
+    send_log("Done releasing resources. Script finished.")
+    print("Resources released.")
