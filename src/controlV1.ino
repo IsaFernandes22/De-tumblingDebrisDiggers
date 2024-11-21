@@ -13,6 +13,7 @@ const int reactionWheelAxes = zaxis; // in case we change this convention
 // Here are some of the variables associated with the feedback control
 float desiredAngVel[3] = {0,0,0};
 float currentAngVel[3] = {0,0,0};
+float prevAngVel[3] = {0,0,0};
 float angVelError[3] = {0,0,0};
 float maxVolt = 0;
 float voltToMotor[3] = {0,0,0}; 
@@ -28,6 +29,12 @@ float stepperKp = 0; //note to future self; do you need motor params? or are the
 float stepperKi = 0;
 float stepperKd = 0;
 
+// states!
+int state = 0;
+const int DISPATCH_STATE = 0;
+const int ATTACHMENT_STATE = 1;
+const int DETUMBLE_STATE = 2;
+const int FINISH_STATE = 3;
 
 void setup() {
   //lol, set up input pins and shit
@@ -36,22 +43,36 @@ void setup() {
 
 void loop() {
   // read sensor data
-  currentAngVel[0] = digitalRead(xpin);
-  currentAngVel[1] = digitalRead(ypin); 
-  currentAngVel[1] = digitalRead(zpin); 
+  currentAngVel[xaxis] = digitalRead(xpin);
+  currentAngVel[yaxis] = digitalRead(ypin); 
+  currentAngVel[zaxis] = digitalRead(zpin); 
 
-  //calculate voltage to send to stepper motors to line up the reaction wheel
-  for (int i = 0; i < 3; i++) {
-    angVelError[i] = desiredAngVel[i] - currentAngVel[i];
-    if (i == reactionWheelAxis){
-      voltToMotor[i] = 0; //math here using motorKs
-    } else {
-      voltToMotor[i] = 0; //math here using stepperKs
+  if (state == DISPATCH_STATE){
+    // not really anything to do here
+    // if there is angular acceleration, state == ATTACHMENT_STATE
+
+  } else if (state == ATTACCHMENT_STATE){
+    // turn on drills?
+    // if drills are done, state == DETUMBLE_STATE
+
+  } else if (state == DETUMBLE_STATE){
+
+      //calculate voltage to send to stepper motors to line up the reaction wheel
+    for (int i = 0; i < 3; i++) {
+      angVelError[i] = desiredAngVel[i] - currentAngVel[i];
+      if (i == reactionWheelAxis){
+        voltToMotor[i] = 0; //math here using motorKs
+      } else {
+        voltToMotor[i] = 0; //math here using stepperKs
+      }
     }
+    
+    // if angVels are all 0, state = FINISH_STATE
 
+  } else if (state == FINISH_STATE){
+    
+    // send done flag to pi
 
   }
-
-
 
 }
