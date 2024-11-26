@@ -40,10 +40,11 @@ float stepperKd = 0;
 
 // states!
 int state = 0;
-const int DISPATCH_STATE = 0;
-const int ATTACHMENT_STATE = 1;
-const int DETUMBLE_STATE = 2;
-const int FINISH_STATE = 3;
+const int PRE_DISPATCH_STATE = 0;
+const int DISPATCH_STATE = 1;
+const int ATTACCHMENT_STATE = 2;
+const int DETUMBLE_STATE = 3;
+const int FINISH_STATE = 4;
 
 void setup() {
   //lol, set up input pins and shit
@@ -79,7 +80,14 @@ void loop() {
   currentAngVel[yaxis] = digitalRead(ypin) - astroscaleAngVel[yaxis];
   currentAngVel[zaxis] = digitalRead(zpin) - astroscaleAngVel[zaxis]; 
 
-  if (state == DISPATCH_STATE){
+  if (state == PRE_DISPATCH_STATE){
+
+    astroscaleAngVel[axis] = digitalRead(pin);
+    // if recieve flag from pi that it's been launched, 
+    // delay a certain amount of time? and then enter 
+    // dispatch state
+
+  } else if (state == DISPATCH_STATE){
 
     // if there is angular acceleration, state == ATTACHMENT_STATE
     // OR; the sensor we are using DOES also read linear acceleration
@@ -93,9 +101,16 @@ void loop() {
     // then hit RSO (collision!). May have to talk to someone about how
     // to handle this on Tues
 
+    for (int i = 0; i < 3; i++) {
+      voltToMotor[i] = 0; 
+    }
+
   } else if (state == ATTACCHMENT_STATE){
     // turn on drills?
     // if drills are done, state == DETUMBLE_STATE
+    for (int i = 0; i < 3; i++) {
+      voltToMotor[i] = 0; 
+    }
 
   } else if (state == DETUMBLE_STATE){
       //calculate voltage to send to stepper motors to line up and spin the reaction wheel
@@ -114,6 +129,9 @@ void loop() {
 
   } else if (state == FINISH_STATE){
     // send done flag to Pi
+    for (int i = 0; i < 3; i++) {
+      voltToMotor[i] = 0; 
+    }
 
   }
 
@@ -122,12 +140,14 @@ void loop() {
   // I'm not sure how to interface w/ the drivers. I know it'll
   // be analogWrite, but do I need to use PWMs? Also, iirc the 
   // drivers we used in SEED lab handled negative inputs
-  // really weridly
+  // really weirdly
+
+  
 
 
   while (millis() < currentTime + minDeltaT) {
     // waits until minDeltaT time has passed since the start of the loop? 
-    // Idk if this will matter, but if we get unstable behavior it
-    // could help to establish a max sampling rate
+    // Idk if this will matter, but if we get unstable behavior, establishing
+    // a max sampling rate may help?
   }
 }
