@@ -1,3 +1,6 @@
+# Author: Isabella Fernandes 
+# this is for handling communication to ground station and to the arduino
+
 # Send log to ground station (target ip)
 def send_log(message):
     """
