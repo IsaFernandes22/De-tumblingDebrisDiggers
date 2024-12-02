@@ -21,9 +21,10 @@ float astroscaleAngVel[3] = {0,0,0};
 unsigned long prevTime = 0;
 unsigned long currentTime = 0;
 float deltaT = 0;
-float minDeltaT = 0;
+float minDeltaT = 10; // tune this later!
 
-float maxVolt = 0;
+float maxVoltSteppers = 12; // 1.5 A
+float maxVoltReactionWheel = 12; //30 W
 float voltToMotor[3] = {0,0,0}; 
 int voltageSigns[3] = {0,0,0};
 
@@ -46,20 +47,38 @@ const int ATTACCHMENT_STATE = 2;
 const int DETUMBLE_STATE = 3;
 const int FINISH_STATE = 4;
 
+//IO pins
+int sensorInputPin[xaxis] = 0;
+int sensorInputPin[yaxis] = 0;
+int sensorInputPin[zaxis] = 0;
+int motorSpeedPin[xaxis] = 0;
+int motorSpeedPin[yaxis] = 0;
+int motorSpeedPin[zaxis] = 0;
+int motorDirectionPin[xaxis] = 0;
+int motorDirectionPin[yaxis] = 0;
+int motorDirectionPin[zaxis] = 0;
+
 void setup() {
   //lol, set up input pins and shit
 
-  astroscaleAngVel[axis] = digitalRead(pin);
+  astroscaleAngVel[xaxis] = digitalRead(sensorInputPin[xaxis]);
+  astroscaleAngVel[yaxis] = digitalRead(sensorInputPin[yaxis]);
+  astroscaleAngVel[zaxis] = digitalRead(sensorInputPin[zaxis]);
 
-  currentAngVel[xaxis] = digitalRead(xpin) - astroscaleAngVel[xaxis];
-  currentAngVel[yaxis] = digitalRead(ypin) - astroscaleAngVel[yaxis];
-  currentAngVel[zaxis] = digitalRead(zpin) - astroscaleAngVel[zaxis]; 
+  currentAngVel[xaxis] = digitalRead(sensorInputPin[xaxis]) - astroscaleAngVel[xaxis];
+  currentAngVel[yaxis] = digitalRead(sensorInputPin[yaxis]) - astroscaleAngVel[yaxis];
+  currentAngVel[zaxis] = digitalRead(sensorInputPin[zaxis]) - astroscaleAngVel[zaxis]; 
 
   currentTime = millis();
-  delay(1); // so that deltaT cannot equal 0. Probably not necesary, but ¯\_(ツ)_/¯
 }
 
 void loop() {
+
+  while (millis() < currentTime + minDeltaT) {
+    // waits until minDeltaT time has passed since the start of the loop? 
+    // Idk if this will matter, but if we get unstable behavior, establishing
+    // a max sampling rate may help?
+  }
 
   prevTime = currentTime;
   currentTime = millis();
@@ -76,13 +95,15 @@ void loop() {
   prevAngVel[zaxis] = currentAngVel[zaxis]; 
 
   // read sensor data
-  currentAngVel[xaxis] = digitalRead(xpin) - astroscaleAngVel[xaxis];
-  currentAngVel[yaxis] = digitalRead(ypin) - astroscaleAngVel[yaxis];
-  currentAngVel[zaxis] = digitalRead(zpin) - astroscaleAngVel[zaxis]; 
+  currentAngVel[xaxis] = digitalRead(sensorInputPin[xaxis]) - astroscaleAngVel[xaxis];
+  currentAngVel[yaxis] = digitalRead(sensorInputPin[yaxis]) - astroscaleAngVel[yaxis];
+  currentAngVel[zaxis] = digitalRead(sensorInputPin[zaxis]) - astroscaleAngVel[zaxis];
 
   if (state == PRE_DISPATCH_STATE){
 
-    astroscaleAngVel[axis] = digitalRead(pin);
+    astroscaleAngVel[xaxis] = digitalRead(sensorInputPin[xaxis]);
+    astroscaleAngVel[yaxis] = digitalRead(sensorInputPin[yaxis]);
+    astroscaleAngVel[zaxis] = digitalRead(sensorInputPin[zaxis]);
     // if recieve flag from pi that it's been launched, 
     // delay a certain amount of time? and then enter 
     // dispatch state
@@ -135,19 +156,23 @@ void loop() {
 
   }
 
+    // Sets speed and direction on motors.
+  for (int i = 0; i < 3; i++) {
+    if (voltToMotor[i] > 0) {
+      digitalWrite(motorDirectionPin[i], HIGH);  
+    } else {
+      digitalWrite(motorDirectionPin[i], LOW);  
+    }
 
-  // need to actually write the voltage to output pins now, but 
-  // I'm not sure how to interface w/ the drivers. I know it'll
-  // be analogWrite, but do I need to use PWMs? Also, iirc the 
-  // drivers we used in SEED lab handled negative inputs
-  // really weirdly
+    voltToMotor[i] = abs(voltToMotor[i]);
+    
+    if (i == reactionWheelAxis){
+      voltToMotor[i] = min(voltToMotor[i], maxVoltReactionWheel);
+    } else {
+      voltToMotor[i] = min(voltToMotor[i], maxVoltSteppers);
+    }
 
-  
-
-
-  while (millis() < currentTime + minDeltaT) {
-    // waits until minDeltaT time has passed since the start of the loop? 
-    // Idk if this will matter, but if we get unstable behavior, establishing
-    // a max sampling rate may help?
+    voltToMotor[i] *= (255 / maxVolt); // converts to PWM input (duty cycle)! It's a value 0-255, and if it's maxVolt it should be 255
+    analogWrite(motorSpeedPin[i], voltToMotor[i]);
   }
 }
