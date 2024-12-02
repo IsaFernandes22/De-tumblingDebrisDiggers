@@ -12,6 +12,7 @@ def init_camera():
 
 
 #this is where we process the frame from the camera and detect where the RSO is
+#should return a set of velocity and location
 def processFrame(frame):
 
     return

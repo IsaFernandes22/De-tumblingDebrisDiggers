@@ -8,6 +8,7 @@ import cv2
 import serial
 import time
 import dispatch
+import comms
 import socket
 
 #set up serial communication with arduino
@@ -21,21 +22,6 @@ time.sleep(2)  # Allow Arduino to initialize
 TARGET_IP = "192.168.1.100"  # Replace with the IP address of the other computer (TODO)
 TARGET_PORT = 5000           # Replace with the desired port (TODO)
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP Socket
-
-# Send log to ground station (target ip)
-def send_log(message):
-    """
-    Sends a log message to the hardcoded computer.
-
-    Parameters:
-        message (str): The log message to send.
-    """
-    try:
-        log_message = f"LOG: {message}"
-        sock.sendto(log_message.encode('utf-8'), (TARGET_IP, TARGET_PORT))
-        print(f"Sent log: {log_message}")
-    except Exception as e:
-        print(f"Failed to send log: {e}")
 
 # Initialize Camera
 try:
@@ -68,11 +54,11 @@ try:
         break
         
 except KeyboardInterrupt:
-    send_log("Interrupted by user. Exiting...")
+    comms.send_log("Interrupted by user. Exiting...")
 
 finally:
     #clean up the space
     arduino.close()
     sock.close()
-    send_log("Done releasing resources. Script finished.")
+    comms.send_log("Done releasing resources. Script finished.")
     print("Resources released.")
