@@ -1,4 +1,4 @@
-# @author: Isabella Fernandes
+# Author: Isabella Fernandes
 # This is the communication between the main satellite and the de-tumbling mite.
 # This communication happens with a raspberryPi and camera (on the main satellite) 
 # with an arduino (on the mite). The rasPi also communicates with the main satellite's
