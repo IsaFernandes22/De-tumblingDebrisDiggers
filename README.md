@@ -1,5 +1,5 @@
 # De-tumblingDebrisDiggers
-Author: Isabella Fernandes, Quinn Hejmanouski
+Authors: Isabella Fernandes, Quinn Hejmanouski
 
 For the Senior Capstone project with Astroscale US. 
 
