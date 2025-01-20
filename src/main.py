@@ -5,6 +5,7 @@
 # control.
 
 import cv2
+import config
 import serial
 import time
 import dispatch
@@ -12,44 +13,53 @@ import comms
 import socket
 
 #set up serial communication with arduino
-COM_PORT = '/dev/ttyUSB0'  # Adjust for setup with prototype (TODO)
-BAUD_RATE = 9600
-arduino = serial.Serial(COM_PORT, BAUD_RATE, timeout=1)
+arduino = serial.Serial(config.COM_PORT, config.BAUD_RATE, timeout=1)
 time.sleep(2)  # Allow Arduino to initialize
 
 # --- Computer-to-Computer Communication Setup ---
 # Hardcoded IP and port of the target computer
-TARGET_IP = "192.168.1.100"  # Replace with the IP address of the other computer (TODO)
-TARGET_PORT = 5000           # Replace with the desired port (TODO)
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP Socket
 
 # Initialize Camera
 try:
-    cap = dispatch.init_camera()
+    cap = dispatch.init_camera(config.CAMERA_INDEX)
 except Exception as e:
     print(e)
     exit()
 
 print("Camera and serial initialized. Press 'q' to quit.")
 
-# TODO this is where the dispatch stuff will be analyzed
+# Analyze the dispatch stuff
 
-
-# Await for the signal from the arduino to let the target know when the RSO is ready for capture
+velocity, location = None, None
+previous_location = None
+dt = 1  # Assume a fixed time delta for simplicity
 
 try:
     while True:
+        # Process camera frame for dispatch parameters
+        ret, frame = cap.read()
+        if not ret:
+            print("Failed to read frame from camera.")
+            break
+
+        velocity, location = dispatch.processFrame(frame, previous_location, dt)
+        if location:
+            print(f"Detected RSO at {location} with velocity {velocity}")
+            previous_location = location
+
+            # Optionally, send RSO parameters to the ground station
+            dispatch_message = f"RSO detected at {location} with velocity {velocity}"
+            comms.notify_ground_station(sock, dispatch_message)
+        
         # Check if there's data from the Arduino
         if arduino.in_waiting > 0:
             detumble_signal = arduino.readline().decode('utf-8').strip()
 
         if detumble_signal == "1":  # '1' indicates detumbled
-            print("RSO detumbled. Sending ready signal to ground station.")
-
-            # Notify the other computer
-            message = "RSO_READY_FOR_CAPTURE"
-            sock.sendto(message.encode('utf-8'), (TARGET_IP, TARGET_PORT))
-            print(f"Message sent to {TARGET_IP}:{TARGET_PORT}") #logging message
+                print("RSO detumbled. Sending ready signal to ground station.")
+                comms.notify_ground_station(sock, "RSO_READY_FOR_CAPTURE")
+                break  # Exit after sending the detumbled signal
                 
         break
         
@@ -57,8 +67,8 @@ except KeyboardInterrupt:
     comms.send_log("Interrupted by user. Exiting...")
 
 finally:
-    #clean up the space
+    cap.release()  # Release the camera
+    cv2.destroyAllWindows()  # Close OpenCV windows
     arduino.close()
     sock.close()
     comms.send_log("Done releasing resources. Script finished.")
-    print("Resources released.")
