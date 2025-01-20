@@ -4,9 +4,10 @@
 
 import cv2
 import numpy as np
+import config
 
 def init_camera():
-    cap = cv2.VideoCapture(0) # this uses first camera (only camera connected to pi)
+    cap = cv2.VideoCapture(camera_index=config.CAMERA_INDEX)
     if not cap.isOpened():
         raise Exception("ERROR: Camera unable to be initialized.")
     return cap
