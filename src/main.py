@@ -60,7 +60,6 @@ try:
                 print("RSO detumbled. Sending ready signal to ground station.")
                 comms.notify_ground_station(sock, "RSO_READY_FOR_CAPTURE")
                 break  # Exit after sending the detumbled signal
-                
         break
         
 except KeyboardInterrupt:
