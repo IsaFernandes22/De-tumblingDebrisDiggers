@@ -2,7 +2,7 @@
 # Author: Isabella Fernandes
 
 # Serial Communication Configuration
-COM_PORT = '/dev/ttyUSB0'  # TODO
+COM_PORT = '/dev/ttyUSB0'  # TODO change to the correct port (found by ls /dev/tty*)
 BAUD_RATE = 9600
 
 # Ground Station Communication Configuration

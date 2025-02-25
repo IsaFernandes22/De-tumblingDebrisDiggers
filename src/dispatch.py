@@ -1,6 +1,7 @@
 # Author: Isabella Fernandes
 # This is where the dispatch parameters and location for attachment on the RSO
 # are calculated before dispatching.
+# Assuming camera has 30 FPS, maybe 60 (TODO)
 
 import cv2
 import numpy as np
