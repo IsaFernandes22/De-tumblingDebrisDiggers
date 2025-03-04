@@ -1,5 +1,6 @@
 # Author: Isa Fernandes
-
+# Date: 04-25-2021
+# Description: Test communication.py
 import unittest
 from src import comms
 from src import dispatch

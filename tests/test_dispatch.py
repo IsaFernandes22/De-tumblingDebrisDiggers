@@ -1,50 +1,81 @@
-#this is for trial testing OpenCV and Supervision for launch params
+# Author: Isa Fernandes
+# Date: 04-25-2021
+# Description: Test communication.py
+
 import unittest
-from src import comms
+import cv2
+import time
 from src import dispatch
-from unittest.mock import patch
 
 class TestDispatch(unittest.TestCase):
 
     def setUp(self):
-        self.cap = dispatch.init_camera()
-    
-    # Test if the camera initializes correctly
-    def test_init_camera(self):
+        """Load a test video instead of initializing a live camera."""
+        self.video_path = "tests/test_videos/Andras-J video.mov"  # Using test videos
+        self.cap = cv2.VideoCapture(self.video_path)
+        if not self.cap.isOpened():
+            self.fail(f"Could not open test video: {self.video_path}")
+        self.previous_location = None
+        self.previous_time = None
+
+    def test_video_opens(self):
+        """Ensure the video file opens correctly."""
         self.assertTrue(self.cap.isOpened())
 
-    # Test if the frame is processed correctly (location and velocity are returned)
     def test_processFrame(self):
+        """Test if processFrame returns valid velocity and location, considering time."""
         ret, frame = self.cap.read()
-        previous_location = None
-        dt = 1
-        velocity, location = dispatch.processFrame(frame, previous_location, dt)
-        self.assertIsInstance(velocity, tuple)
-        self.assertIsInstance(location, tuple)
+        self.assertTrue(ret, "Failed to read a frame from video")
 
-    # Test if location and velocity are reasonable values
-    def test_processFrame_values(self):
+        # First frame, use None for previous location and time
+        velocity, location, self.previous_time = dispatch.processFrame(frame, self.previous_location, self.previous_time)
+
+        self.assertIsInstance(velocity, tuple, "Velocity should be a tuple")
+        self.assertIsInstance(location, tuple, "Location should be a tuple")
+
+    def test_processFrame_with_time(self):
+        """Test if processFrame properly calculates velocity based on time."""
         ret, frame = self.cap.read()
-        previous_location = None
-        dt = 1
-        velocity, location = dispatch.processFrame(frame, previous_location, dt)
+        self.assertTrue(ret, "Failed to read a frame from video")
 
-        self.assertGreaterEqual(location[0], 0)  # Location X should be positive
-        self.assertGreaterEqual(location[1], 0)  # Location Y should be positive
-
-    # Test if `dispatch` properly handles the processed frame data
-    @patch("src.dispatch.send_data")
-    def test_dispatch_receives_correct_data(self, mock_send_data):
-        ret, frame = self.cap.read()
-        previous_location = None
-        dt = 1
-        velocity, location = dispatch.processFrame(frame, previous_location, dt)
+        # First frame, use None for previous location and time
+        velocity, location, self.previous_time = dispatch.processFrame(frame, self.previous_location, self.previous_time)
         
-        # Call the function that sends data to dispatch
-        dispatch.send_data({"velocity": velocity, "location": location})
+        # Store the previous location for the next frame
+        previous_location = location
 
-        # Check if dispatch.send_data was called with correct values
-        mock_send_data.assert_called_with({"velocity": velocity, "location": location})
+        # Ensure that velocity is calculated considering the time difference (dt)
+        time.sleep(1/30)  # Sleep to simulate time between frames (assuming 30 FPS)
+
+        # Read the next frame
+        ret, frame = self.cap.read()
+        self.assertTrue(ret, "Failed to read a second frame from video")
+
+        # Process the second frame
+        velocity, location, self.previous_time = dispatch.processFrame(frame, previous_location, self.previous_time)
+
+        # Assert velocity is a tuple and it's not zero (indicating motion was detected)
+        self.assertIsInstance(velocity, tuple, "Velocity should be a tuple")
+        self.assertNotEqual(velocity, (0, 0), "Velocity should not be (0, 0) if there was motion between frames")
+
+    def test_processFrame_values(self):
+        """Ensure that the detected location is within frame bounds and velocity is non-zero."""
+        ret, frame = self.cap.read()
+        self.assertTrue(ret, "Failed to read a frame from video")
+
+        # First frame, use None for previous location and time
+        velocity, location, self.previous_time = dispatch.processFrame(frame, self.previous_location, self.previous_time)
+
+        height, width, _ = frame.shape
+        self.assertGreaterEqual(location[0], 0, "X location should be non-negative")
+        self.assertGreaterEqual(location[1], 0, "Y location should be non-negative")
+        self.assertLess(location[0], width, "X location should be within frame width")
+        self.assertLess(location[1], height, "Y location should be within frame height")
+        self.assertNotEqual(velocity, (0, 0), "Velocity should not be (0, 0) if there is motion")
 
     def tearDown(self):
+        """Release the video capture object."""
         self.cap.release()
+
+if __name__ == "__main__":
+    unittest.main()
