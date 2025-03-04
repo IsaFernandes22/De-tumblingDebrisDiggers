@@ -5,11 +5,11 @@
 # control.
 
 import cv2
-import config
+from src import config
 import serial
 import time
-import dispatch
-import comms
+from src import dispatch
+from src import comms
 import socket
 
 #set up serial communication with arduino

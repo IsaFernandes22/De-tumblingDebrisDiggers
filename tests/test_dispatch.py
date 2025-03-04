@@ -7,7 +7,7 @@ from unittest.mock import patch
 class TestDispatch(unittest.TestCase):
 
     def setUp(self):
-        self.cap = comms.init_camera()
+        self.cap = dispatch.init_camera()
     
     # Test if the camera initializes correctly
     def test_init_camera(self):
@@ -18,7 +18,7 @@ class TestDispatch(unittest.TestCase):
         ret, frame = self.cap.read()
         previous_location = None
         dt = 1
-        velocity, location = comms.processFrame(frame, previous_location, dt)
+        velocity, location = dispatch.processFrame(frame, previous_location, dt)
         self.assertIsInstance(velocity, tuple)
         self.assertIsInstance(location, tuple)
 
@@ -27,7 +27,7 @@ class TestDispatch(unittest.TestCase):
         ret, frame = self.cap.read()
         previous_location = None
         dt = 1
-        velocity, location = comms.processFrame(frame, previous_location, dt)
+        velocity, location = dispatch.processFrame(frame, previous_location, dt)
 
         self.assertGreaterEqual(location[0], 0)  # Location X should be positive
         self.assertGreaterEqual(location[1], 0)  # Location Y should be positive
@@ -38,7 +38,7 @@ class TestDispatch(unittest.TestCase):
         ret, frame = self.cap.read()
         previous_location = None
         dt = 1
-        velocity, location = comms.processFrame(frame, previous_location, dt)
+        velocity, location = dispatch.processFrame(frame, previous_location, dt)
         
         # Call the function that sends data to dispatch
         dispatch.send_data({"velocity": velocity, "location": location})
