@@ -9,9 +9,10 @@ from comms import CommunicationHandler
 class TestCommunication(unittest.TestCase):
 
     def setUp(self):
+        #CommunicationHandler comm = CommunicationHandler()
         return super().setUp()
     
-    #TODO need to make these test more robust
+    #TODO need to make these test are more robust
 
     # Test logging message
     def test_send_log(self):

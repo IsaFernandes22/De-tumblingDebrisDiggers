@@ -1,6 +1,6 @@
 # Author: Isabella Fernandes 
 # this is for handling communication to ground station and to the arduino
-import config
+from src import config
 
 class CommunicationHandler:
     # Send log to ground station (target ip), returns void

@@ -6,7 +6,7 @@ COM_PORT = '/dev/ttyUSB0'  # TODO change to the correct port (found by ls /dev/t
 BAUD_RATE = 9600
 
 # Ground Station Communication Configuration
-TARGET_IP = "192.168.1.100"  # TODO 
+TARGET_IP = "192.168.1.100"  # TODO set it to my computer's IP
 TARGET_PORT = 5000           # TODO
 
 # Camera Configuration

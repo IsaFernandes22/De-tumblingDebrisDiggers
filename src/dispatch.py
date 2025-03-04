@@ -5,7 +5,7 @@
 
 import cv2
 import numpy as np
-import config
+from src import config
 
 def init_camera():
     cap = cv2.VideoCapture(camera_index=config.CAMERA_INDEX)
