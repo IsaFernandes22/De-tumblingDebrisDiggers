@@ -61,7 +61,7 @@ def processFrame(frame, previous_location=None, previous_time=None):
             cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)  
 
             cv2.imshow("Tracked Object", frame)
-            cv2.waitKey(1)
+            cv2.waitKey(500)
 
             if previous_location:
                 vx = (location[0] - previous_location[0]) / dt
