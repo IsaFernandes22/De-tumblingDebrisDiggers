@@ -1,3 +1,7 @@
+# Author: Isa Fernandes
+# Date: 03-13-2025
+# Description: Test main.py
+
 import unittest
 from unittest.mock import MagicMock, patch
 from collections import deque

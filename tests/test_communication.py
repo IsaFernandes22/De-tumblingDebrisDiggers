@@ -1,3 +1,7 @@
+# Author: Isa Fernandes
+# Date: 03-13-2025
+# Description: Test communication.py
+
 import unittest
 from unittest.mock import patch, MagicMock
 import socket
