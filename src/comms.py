@@ -1,6 +1,8 @@
 # Author: Isabella Fernandes 
 # this is for handling communication to ground station and to the arduino
 from src import config
+from rpi_rf import RFDevice
+import time
 
 class CommunicationHandler:
     # Send log to ground station (target ip), returns void
@@ -19,18 +21,28 @@ class CommunicationHandler:
             print(f"Failed to send log: {e}")
 
     # this returns a string of the arduino data it received
-    def listen_to_arduino(arduino):
+    @staticmethod
+    def listen_to_arduino():
         """
-        Listens to the Arduino for a signal.
-
-        Parameters:
-            arduino (serial.Serial): The serial connection to the Arduino.
+        Listens for data from the Arduino via 433MHz RF.
 
         Returns:
-            str: The message received from the Arduino.
+            str: The received message.
         """
-        if arduino.in_waiting > 0:
-            return arduino.readline().decode('utf-8').strip()
+        rf_receiver = RFDevice(config.RF_GPIO)  # RF GPIO pin is defined in config.py
+        rf_receiver.enable_receive()
+
+        try:
+            while True:
+                if rf_receiver.rx_code:
+                    print(f"Received: {rf_receiver.rx_code}")
+                    return str(rf_receiver.rx_code)
+                time.sleep(0.1)  # to prevent CPU overuse
+        except Exception as e:
+            print(f"RF receive error: {e}")
+        finally:
+            rf_receiver.cleanup()
+
         return None
 
     # this sens a message to ground station, returns void

@@ -1,9 +1,8 @@
 # Configuration file for De-Tumbling Debris Diggers
 # Author: Isabella Fernandes
 
-# Serial Communication Configuration
-COM_PORT = '/dev/ttyUSB0'  # TODO change to the correct port (found by ls /dev/tty*)
-BAUD_RATE = 9600
+# RF Configuration (for Arduino communication)
+RF_GPIO = 17  # GPIO pin for RF communication (data pin connected to raspberry pi)
 
 # Ground Station Communication Configuration
 TARGET_IP = "192.168.1.100"  # TODO set it to my computer's IP

@@ -1,33 +1,33 @@
-# Author: Isa Fernandes
-# Date: 04-25-2021
-# Description: Test communication.py
 import unittest
-from src import comms
-from src import dispatch
-from src import main
-from comms import CommunicationHandler
+from unittest.mock import patch, MagicMock
+import socket
+from src.comms import CommunicationHandler
 
-class TestCommunication(unittest.TestCase):
+class TestComms(unittest.TestCase):
 
-    def setUp(self):
-        #CommunicationHandler comm = CommunicationHandler()
-        return super().setUp()
-    
-    #TODO need to make these test are more robust
+    @patch('socket.socket')
+    def test_send_log(self, mock_socket):
+        """ Test that logs are correctly sent to the ground station. """
+        mock_sock = mock_socket.return_value
+        CommunicationHandler.send_log("Test log", mock_sock)
+        mock_sock.sendto.assert_called_with(b"LOG: Test log", (CommunicationHandler.config.TARGET_IP, CommunicationHandler.config.TARGET_PORT))
 
-    # Test logging message
-    def test_send_log(self):
-        message = "Test log message"
-        sock = CommunicationHandler.send_log(message)
-        self.assertTrue(sock)
-    
-    # Test listening to arduino
-    def test_listen_to_arduino(self):
-        arduino = CommunicationHandler.listen_to_arduino()
-        self.assertTrue(arduino)
-    
-    # Test notifying ground station
-    def test_notify_ground_station(self):
-        message = "Test message"
-        sock = CommunicationHandler.notify_ground_station(message)
-        self.assertTrue(sock)
+    @patch('src.comms.RFDevice')
+    def test_listen_to_arduino(self, mock_rfdevice):
+        """ Test that RF receiving correctly captures Arduino messages. """
+        mock_rf = mock_rfdevice.return_value
+        mock_rf.rx_code = "1"  # Simulate receiving signal "1"
+        mock_rf.enable_receive.return_value = None
+
+        received_data = CommunicationHandler.listen_to_arduino()
+        self.assertEqual(received_data, "1")
+
+    @patch('socket.socket')
+    def test_notify_ground_station(self, mock_socket):
+        """ Test that ground station notifications are sent correctly. """
+        mock_sock = mock_socket.return_value
+        CommunicationHandler.notify_ground_station(mock_sock, "RSO detected")
+        mock_sock.sendto.assert_called_with(b"RSO detected", (CommunicationHandler.config.TARGET_IP, CommunicationHandler.config.TARGET_PORT))
+
+if __name__ == '__main__':
+    unittest.main()
