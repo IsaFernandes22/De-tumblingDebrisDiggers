@@ -1,18 +1,7 @@
-// control V2! I think I should rewrite this now that I understand a little better
-// Authors: Quinn, Isabella
-
 #include <TMCStepper.h>         // TMCstepper - https://github.com/teemuatlut/TMCStepper
 #include <SoftwareSerial.h>     // Software serial for the UART to TMC2209 - https://www.arduino.cc/en/Reference/softwareSerial
 #include <Streaming.h>          // For serial debugging output - https://www.arduino.cc/reference/en/libraries/streaming/
 #include <DFRobot_QMC5883.h>
-#include <RCSwitch.h>
-
-RCSwitch mySwitch = RCSwitch();
-
-unsigned long lastDeTumbleSignalTime = 0;  // Time tracker for de-tumble signal
-int deTumbleSignalCount = 0;  // Counter for sending signals
-const int maxSignals = 5;  // Send signal 5 times
-const unsigned long signalInterval = 240000;  // 4 minutes (240000 ms)
 
 const int xAxis = 0; // stepper motor that CAN rotate freely
 const int yAxis = 1; // stepper motor that can only go 180 degrees
@@ -88,7 +77,7 @@ void setup() {
   yMotor.pwm_autoscale(true); 
 
   currentTime = millis();
-  mySwitch.enableTransmit(10);  // RF transmitter pin, might need to be changed (TODO)
+
   // may need more stuff in set up for the gyroscope- deeply confused about the gyroscope code
 
 }
@@ -105,21 +94,31 @@ void loop() {
   currentTime = millis();
   deltaT = currentTime - prevTime; 
 
-  // giant state machine if statement
+  if(state == PRE_DISPATCH_STATE){
+
+    // read astroscale velocity
+    // confirm the gantry system for attachment is in the correct starting position
+
+  } else if(state == DISPATCH_STATE){
+
+    // wait for a collision
+
+  } else if(state == ATTACHMENT_STATE){
+
+    // attachment
+
+  } else if(state == DETUMBLE_STATE){
+
+    // cmg
+
+  } else if(state == FINISH_STATE){
+
+    // nothing, for now
+
+  }
+
   updateMotors();
 
-  // Check if we have reached the finished state
-  if (state == FINISH_STATE) {
-    if (deTumbleSignalCount < maxSignals) {
-      if (millis() - lastDeTumbleSignalTime >= signalInterval || lastDeTumbleSignalTime == 0) {
-        mySwitch.send(12345, 24);  // sample signal so it's unique
-        Serial.println("De-tumble signal sent.");
-
-        deTumbleSignalCount++;
-        lastDeTumbleSignalTime = millis();
-      }
-    }
-  }
 }
 
 void readGyro(){
@@ -171,7 +170,7 @@ void updateMotors(){
     xMotor.shaft(1);
   }
 
-    yMotor.VACTUAL(abs(voltToMotor[1]));
+  yMotor.VACTUAL(abs(voltToMotor[1]));
   Serial << yMotor.VACTUAL() << endl;
   if (voltToMotor[1] < 0){
     yMotor.shaft(0); 
