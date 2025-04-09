@@ -1,0 +1,43 @@
+const int dirPin = 0;
+const int enaPin = 7;
+const int stepPin = 1;
+
+
+void setup(){
+
+  pinMode(dirPin, OUTPUT);
+  pinMode(enaPin, OUTPUT);
+  pinMode(stepPin, OUTPUT);
+
+  digitalWrite(enaPin, LOW);
+
+}
+
+void loop(){
+
+  int speed = 160; // inverted. A smaller number means faster. Max speed is ~64
+
+  digitalWrite(dirPin, HIGH);
+  int timeToMove = 10000;
+
+  // this whole for loop is necesary because of how the input to the stepPin works. 
+  // this is NOT going back and forth, this is going one direction for a set amount of time
+  for (int t = 0; t < timeToMove; t++){
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(speed);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(speed);
+  }
+
+  //(and then this is for going the other direction)
+  digitalWrite(dirPin, LOW);
+
+  for (int t = 0; t < timeToMove; t++){
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(speed);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(speed);
+  }
+
+
+}
