@@ -1,0 +1,5 @@
+opencv-python==4.8.1.78  # For computer vision and image processing
+numpy==1.26.4            # For numerical calculations and velocity tracking
+rpi-rf==0.9.7            # For RF communication on Raspberry Pi with Arduino
+matplotlib==3.8.3        # For visualizing data, debugging tracking results
+pytest==8.0.2            # For writing and running unit tests
