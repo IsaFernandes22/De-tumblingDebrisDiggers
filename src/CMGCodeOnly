@@ -1,5 +1,7 @@
-#include <TMCStepper.h>         // TMCstepper - https://github.com/teemuatlut/TMCStepper
-#include <SoftwareSerial.h>     // Software serial for the UART to TMC2209 - https://www.arduino.cc/en/Reference/softwareSerial
+// note to Isa; this is the fully integrated CMG code, which is not what we've been using at all
+// it is unfinished and untested and probably not super worth looking through, unless we want to
+// do more complicated testing then what we're currently planning
+
 #include <Streaming.h>          // For serial debugging output - https://www.arduino.cc/reference/en/libraries/streaming/
 #include <DFRobot_QMC5883.h>
 
@@ -178,4 +180,3 @@ void updateMotors(){
   }
   analogWrite(zMotorPins[0], abs(voltToMotor[2]));
 }
-
