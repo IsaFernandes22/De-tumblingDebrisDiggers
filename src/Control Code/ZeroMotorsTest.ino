@@ -1,3 +1,5 @@
+// @author: Fuller Clement
+//TODO: add a button to demo
 // ——— Pin definitions ———
 // Motor 1 (Z axis)
 const int motor1_enablePin = 5;
