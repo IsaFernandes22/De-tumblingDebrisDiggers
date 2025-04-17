@@ -1,4 +1,4 @@
-// @author: Fuller Clement + Button Mod by ChatGPT
+// @author: Fuller Clement 
 
 // -------- Pin definitions --------
 // Motor 1 (Z axis)
