@@ -1,5 +1,6 @@
 // @author: Isabella Fernandes
 // This is the final controls for the Mite, to be run on the Arduino Mega
+//TODO: individual code needed + having a button to test
 
 #include <TMCStepper.h>         // TMCstepper - https://github.com/teemuatlut/TMCStepper
 #include <SoftwareSerial.h>     // Software serial for the UART to TMC2209 - https://www.arduino.cc/en/Reference/softwareSerial
@@ -18,8 +19,11 @@ enum State {
   ROTATION_CHECK,
   DONE
 };
+
 // Initialize FSM state variable
 State currentState = PRE_DISPATCH;
+
+// Initialize helper funcs
 void drill();
 void reset();
 void moveCMGToPotentiometerAngle();
@@ -31,6 +35,7 @@ currentState = newState;
 Serial.print("Transitioned to state: ");
 Serial.println(newState);
 }
+
 //------------------Pin Assignments-----------------------------------------------------------------
 int limitSwitchPins[3] = {0, 0, 0}; // order: spinning, horizontal, vertical
 
