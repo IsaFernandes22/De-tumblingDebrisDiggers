@@ -27,12 +27,12 @@ const int DC_IN2 = 23;
 const int BTN_PIN = A0;
 
 // ---------- Motion parameters ----------
-const int    STEPS_PER_REV = 200;     // change if you micro‑step
-const int    STEP_DELAY_US = 1000;    // motor speed
+const int    STEPS_PER_REV = 200;     // TODO: change accordingly, steps for one full rotation
+const int    STEP_DELAY_US = 1000;    // delay between steps in microseconds
 const uint32_t DEBOUNCE_MS = 50;
 
-// drill‑spin time after every Z “down” move
-const uint16_t DRILL_TIME_MS = 2000;
+// drill‑spin time after every Z “down” move (how long the drill spins)
+const uint16_t DRILL_TIME_MS = 2000; 
 
 // ---------- State variables ----------
 bool sequenceRunning = false;
@@ -86,7 +86,7 @@ void loop() {
 
 // ─────────── MAIN SEQUENCE ───────────
 void runSequence() {
-  // 1) Home all axes (counter‑clockwise toward limits)
+  // 1) Home all axes (counter‑clockwise toward limits). Run till it hits limit switch.
   homeAxis(Z_EN,Z_STEP,Z_DIR,Z_LIM,LOW);
   homeAxis(R_EN,R_STEP,R_DIR,R_LIM,LOW);
   homeAxis(T_EN,T_STEP,T_DIR,T_LIM,LOW);
