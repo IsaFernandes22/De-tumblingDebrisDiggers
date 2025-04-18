@@ -68,6 +68,8 @@ python comms.py
 ## 👥 **Team Members**  
 - **Isabella Fernandes** (Lead Developer, Communications & Controls)  
 - **Quinn Hejmanowski** (Lead Engineer, Controls)
+- **Fuller Clement** (Lead Engineer, RSO Attachment)
+- **Colin Nolan** (Lead Engineer, Torque Control)
   
 
 ## 📌 **Future Improvements**  
