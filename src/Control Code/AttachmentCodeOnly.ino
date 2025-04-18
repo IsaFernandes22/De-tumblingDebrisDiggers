@@ -1,158 +1,150 @@
-const int limitSwitchPins[3] = {0,0,0}; // order: spinning, horizontal, vertical
+// @author: Isabella Fernandes
+// ---------- Pin Assignments ----------
+// Z axis
+const int Z_EN   = 2;
+const int Z_STEP = 3;
+const int Z_DIR  = 4;
+const int Z_LIM  = 11;
 
-const int horizontalMotorPins[3] = {2,3,4}; //enable, dir, step. Any pins on the board work
-const int verticalMotorPins[3] = {0,0,0};
-const int spinMotorPins[3] = {0,0,0};
-const int drillMotorPins[2] = {0,0}; // dir, volt. volt must be PWM enabled
+// R axis
+const int R_EN   = 5;
+const int R_STEP = 6;
+const int R_DIR  = 7;
+const int R_LIM  = 12;
 
-const int stepperSpeed = 160; // inverted. A smaller number means faster
+// Theta axis
+const int T_EN   = 8;
+const int T_STEP = 9;
+const int T_DIR  = 10;
+const int T_LIM  = 13;
 
-// likely need a seperate speed variable for the vertical movement, 
-// so that we can adjust the speed that the drill goes up and down,
-// but ¯\_(ツ)_/¯. Syncing that will be a task for later
+// DC motor (drill spindle)
+const int DC_EN  = 44;
+const int DC_IN1 = 22;
+const int DC_IN2 = 23;
 
+// Start‑button
+const int BTN_PIN = A0;
 
-void drill();
-void reset();
+// ---------- Motion parameters ----------
+const int    STEPS_PER_REV = 200;     // change if you micro‑step
+const int    STEP_DELAY_US = 1000;    // motor speed
+const uint32_t DEBOUNCE_MS = 50;
 
+// drill‑spin time after every Z “down” move
+const uint16_t DRILL_TIME_MS = 2000;
+
+// ---------- State variables ----------
+bool sequenceRunning = false;
+bool lastBtnState    = HIGH;
+uint32_t lastBounce  = 0;
+
+// ---------- Forward declarations ----------
+void runSequence();                       // does the 13 steps
+void homeAxis(int en,int st,int dir,int lim,bool towardHi);
+void moveSteps(int en,int st,int dir,float rot,bool cw);
+void drillZ(float rot,bool down);
+void disableAll();
+
+// ─────────── SETUP ───────────
 void setup() {
+  // Stepper & limit pins
+  pinMode(Z_EN,OUTPUT); pinMode(Z_STEP,OUTPUT); pinMode(Z_DIR,OUTPUT);
+  pinMode(R_EN,OUTPUT); pinMode(R_STEP,OUTPUT); pinMode(R_DIR,OUTPUT);
+  pinMode(T_EN,OUTPUT); pinMode(T_STEP,OUTPUT); pinMode(T_DIR,OUTPUT);
 
-  for(int i = 0; i < 3; i++){
-    pinMode(limitSwitchPins[i], INPUT);
-    pinMode(horizontalMotorPins[i], OUTPUT);
-    pinMode(verticalMotorPins[i], OUTPUT);
-    pinMode(spinMotorPins[i], OUTPUT);
-  }
+  pinMode(Z_LIM,INPUT_PULLUP);
+  pinMode(R_LIM,INPUT_PULLUP);
+  pinMode(T_LIM,INPUT_PULLUP);
 
-  pinMode(drillMotorPins[0], OUTPUT);
-  pinMode(drillMotorPins[1], OUTPUT);
+  // DC motor
+  pinMode(DC_EN,OUTPUT); pinMode(DC_IN1,OUTPUT); pinMode(DC_IN2,OUTPUT);
 
-  digitalWrite(horizontalMotorPins[0], LOW); // this enables all steppers
-  digitalWrite(verticalMotorPins[0], LOW);
-  digitalWrite(verticalMotorPins[0], LOW);
+  // Button
+  pinMode(BTN_PIN,INPUT_PULLUP);
 
+  disableAll();                 // keep everything off until commanded
 }
 
+// ─────────── LOOP ───────────
 void loop() {
-  
-  reset(); // positions the system such that all limit switches are triggered
-
-  // Move to central drill position:
-
-  int time1 = 10000; // tune this value! based on how long it takes to move drill to correct spot
-  
-  digitalWrite(horizontalMotorPins[1], LOW); // idk man I just guessed a direction
-  
-  for (int t = 0; t < time1; t++){
-    digitalWrite(horizontalMotorPins[2], HIGH);
-    delayMicroseconds(stepperSpeed);
-    digitalWrite(horizontalMotorPins[2], LOW);
-    delayMicroseconds(stepperSpeed);
+  // ───── read & debounce button ─────
+  bool btnState = digitalRead(BTN_PIN);
+  if (btnState != lastBtnState) {
+    lastBounce = millis();                  // reset debounce timer
   }
-
-  drill(); //central hole
-
-  int time2 = 10000; // tune this value! based on how long it takes to move drill to correct spot
-  
-  digitalWrite(horizontalMotorPins[1], HIGH); // idk man I just guessed a direction
-  
-  for (int t = 0; t < time1; t++){
-    digitalWrite(horizontalMotorPins[2], HIGH);
-    delayMicroseconds(stepperSpeed);
-    digitalWrite(horizontalMotorPins[2], LOW);
-    delayMicroseconds(stepperSpeed);
+  if (!sequenceRunning &&                   // only react if idle
+      (millis() - lastBounce) > DEBOUNCE_MS &&
+      btnState == LOW && lastBtnState == HIGH) {   // falling edge
+        sequenceRunning = true;
+        runSequence();                      // do the whole drill routine
+        sequenceRunning = false;
+        disableAll();
   }
-
-  drill(); // first outside hole
-
-  int time3 = 10000; // tune this value! based on how long it takes to move drill to correct spot
-  
-  digitalWrite(spinMotorPins[1], LOW); // idk man I just guessed a direction
-  
-  for (int t = 0; t < time1; t++){
-    digitalWrite(spinMotorPins[2], HIGH);
-    delayMicroseconds(stepperSpeed);
-    digitalWrite(spinMotorPins[2], LOW);
-    delayMicroseconds(stepperSpeed);
-  }
-  
-  drill(); // second outside hole
-
-  int time4 = 10000; // tune this value! based on how long it takes to move drill to correct spot
-  
-  digitalWrite(spinMotorPins[1], LOW); // idk man I just guessed a direction
-  
-  for (int t = 0; t < time1; t++){
-    digitalWrite(spinMotorPins[2], HIGH);
-    delayMicroseconds(stepperSpeed);
-    digitalWrite(spinMotorPins[2], LOW);
-    delayMicroseconds(stepperSpeed);
-  }
-
-  drill(); // third outside hole
-
-  while(1); // infinite delay, in the real code this will be moving to the next state (lol)
-
+  lastBtnState = btnState;
 }
 
-void reset(){
-  //run steppers to reset position, specically running until they hit the limit switches
+// ─────────── MAIN SEQUENCE ───────────
+void runSequence() {
+  // 1) Home all axes (counter‑clockwise toward limits)
+  homeAxis(Z_EN,Z_STEP,Z_DIR,Z_LIM,LOW);
+  homeAxis(R_EN,R_STEP,R_DIR,R_LIM,LOW);
+  homeAxis(T_EN,T_STEP,T_DIR,T_LIM,LOW);
 
-  digitalWrite(horizontalMotorPins[1], HIGH); // idk man I just guessed a direction
-  digitalWrite(verticalMotorPins[1], HIGH);
-  digitalWrite(spinMotorPins[1], HIGH);
-
-   while (digitalRead(limitSwitchPins[0]) == LOW) {
-    digitalWrite(spinMotorPins[2], HIGH);
-    delayMicroseconds(stepperSpeed);
-    digitalWrite(spinMotorPins[2], LOW);
-    delayMicroseconds(stepperSpeed);
-  }
-  
-  while (digitalRead(limitSwitchPins[1]) == LOW) {
-    digitalWrite(horizontalMotorPins[2], HIGH);
-    delayMicroseconds(stepperSpeed);
-    digitalWrite(horizontalMotorPins[2], LOW);
-    delayMicroseconds(stepperSpeed);
-  }
-
-  while (digitalRead(limitSwitchPins[2]) == LOW) {
-    digitalWrite(verticalMotorPins[2], HIGH);
-    delayMicroseconds(stepperSpeed);
-    digitalWrite(verticalMotorPins[2], LOW);
-    delayMicroseconds(stepperSpeed);
-  }
+  // 2‑13) Operations spelled out one‑by‑one
+  moveSteps(R_EN,R_STEP,R_DIR,0.709965667,true);      // step 2
+  drillZ(1.352856915,true);                           // step 3
+  drillZ(1.352856915,false);                          // step 4
+  moveSteps(R_EN,R_STEP,R_DIR,0.709965667,false);     // step 5
+  drillZ(1.352856915,true);                           // step 6
+  drillZ(1.352856915,false);                          // step 7
+  moveSteps(T_EN,T_STEP,T_DIR,1.714285714,true);      // step 8
+  drillZ(1.352856915,true);                           // step 9
+  drillZ(1.352856915,false);                          // step 10
+  moveSteps(T_EN,T_STEP,T_DIR,0.246392157,true);      // step 11
+  drillZ(1.352856915,true);                           // step 12
+  drillZ(1.352856915,false);                          // step 13
 }
 
-void drill(){
-
-  //start the DC motor spinning
-  digitalWrite(drillMotorPins[0], HIGH); // idk high or low
-  analogWrite(drillMotorPins[1], 200); // change the PWM to adjust the speed. Will have to sync this number with how fast it moves up and down???
-
-  //move the drill "down"
-  digitalWrite(verticalMotorPins[1], HIGH);
-  int drillTime = 10000;
-
-  for (int t = 0; t < drillTime; t++){
-    digitalWrite(verticalMotorPins[2], HIGH);
-    delayMicroseconds(stepperSpeed);
-    digitalWrite(verticalMotorPins[2], LOW);
-    delayMicroseconds(stepperSpeed);
+// ─────────── HELPER FUNCTIONS ───────────
+void moveSteps(int en,int st,int dir,float rotations,bool clockwise){
+  uint32_t steps = rotations * STEPS_PER_REV + 0.5;
+  digitalWrite(en,LOW);                    // enable driver
+  digitalWrite(dir,clockwise?HIGH:LOW);
+  for(uint32_t i=0;i<steps;i++){
+    digitalWrite(st,HIGH);  delayMicroseconds(STEP_DELAY_US);
+    digitalWrite(st,LOW);   delayMicroseconds(STEP_DELAY_US);
   }
-
-  //stop the drill motor
-  analogWrite(drillMotorPins[1], 0);
-
-  //move the drill "up"
-  digitalWrite(verticalMotorPins[1], LOW);
-
-  for (int t = 0; t < drillTime; t++){
-    digitalWrite(verticalMotorPins[2], HIGH);
-    delayMicroseconds(stepperSpeed);
-    digitalWrite(verticalMotorPins[2], LOW);
-    delayMicroseconds(stepperSpeed);
-  }
-
+  digitalWrite(en,HIGH);                   // disable
 }
 
+void homeAxis(int en,int st,int dir,int lim,bool towardHi){
+  digitalWrite(en,LOW);
+  digitalWrite(dir,towardHi?HIGH:LOW);
+  while(digitalRead(lim)==HIGH){
+    digitalWrite(st,HIGH); delayMicroseconds(STEP_DELAY_US);
+    digitalWrite(st,LOW);  delayMicroseconds(STEP_DELAY_US);
+  }
+  digitalWrite(en,HIGH);
+}
+
+void drillZ(float rotations,bool down){
+  // spin drill
+  digitalWrite(DC_EN,HIGH);
+  digitalWrite(DC_IN1,HIGH);  digitalWrite(DC_IN2,LOW);
+
+  moveSteps(Z_EN,Z_STEP,Z_DIR,rotations,down);   // Z move
+  delay(DRILL_TIME_MS);                          // keep spinning
+
+  // stop drill
+  digitalWrite(DC_EN,LOW);
+  digitalWrite(DC_IN1,LOW); digitalWrite(DC_IN2,LOW);
+}
+
+void disableAll(){
+  digitalWrite(Z_EN,HIGH);
+  digitalWrite(R_EN,HIGH);
+  digitalWrite(T_EN,HIGH);
+  digitalWrite(DC_EN,LOW);
+  digitalWrite(DC_IN1,LOW); digitalWrite(DC_IN2,LOW);
+}
