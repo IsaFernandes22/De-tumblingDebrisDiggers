@@ -7,7 +7,8 @@ This project is developed as part of a **senior capstone project at Colorado Sch
 
 ## 🎯 **Project Goals**  
 - **Detect and track space debris** using computer vision.  
-- **Estimate velocity and position** for accurate capture.  
+- **Estimate velocity and position** for accurate capture.
+- **Attatch to the debris** with two-step attachment design.  
 - **De-tumble the debris** using a CMG.  
 - **Establish reliable communication** between the ground station, Raspberry Pi, and Arduino.  
 
@@ -16,6 +17,7 @@ This project is developed as part of a **senior capstone project at Colorado Sch
 📾 De-tumblingDebrisDiggers
  ├📂 images/                # Calibration and vision test images
  ├📂 calib_data/            # Camera calibration results
+ ├📂 Control Code/          # Control code 
  ├📄 config.py              # Configuration variables (IP addresses, camera settings, etc.)
  ├📄 comms.py               # Handles communication between the ground station and Arduino
  ├📄 dispatch.py            # Processes frames and estimates debris velocity/location
