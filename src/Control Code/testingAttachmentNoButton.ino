@@ -80,7 +80,7 @@ void runSequence() {
   moveSteps(T_EN,T_STEP,T_DIR,2.4,true);              // 8  (Theta CW)
   drillZ(1.352856915,true);                           // 9
   drillZ(1.352856915,false);                          // 10
-  moveSteps(T_EN,T_STEP,T_DIR,0.246392157,true);      // 11
+  moveSteps(T_EN,T_STEP,T_DIR,2.4,true);              // 11
   drillZ(1.352856915,true);                           // 12
   drillZ(1.352856915,false);                          // 13
 }
