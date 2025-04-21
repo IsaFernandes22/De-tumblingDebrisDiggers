@@ -64,24 +64,16 @@ void setup() {
   pinMode(BTN_PIN,INPUT_PULLUP);
 
   disableAll();                 // keep everything off until commanded
+
+  sequenceRunning = true;
+  runSequence();                      // do the whole drill routine
+  sequenceRunning = false;
+  disableAll();
 }
 
 // ─────────── LOOP ───────────
 void loop() {
-  // ───── read & debounce button ─────
-  bool btnState = digitalRead(BTN_PIN);
-  if (btnState != lastBtnState) {
-    lastBounce = millis();                  // reset debounce timer
-  }
-  if (!sequenceRunning &&                   // only react if idle
-      (millis() - lastBounce) > DEBOUNCE_MS &&
-      btnState == LOW && lastBtnState == HIGH) {   // falling edge
-        sequenceRunning = true;
-        runSequence();                      // do the whole drill routine
-        sequenceRunning = false;
-        disableAll();
-  }
-  lastBtnState = btnState;
+ 
 }
 
 // ─────────── MAIN SEQUENCE ───────────
@@ -98,7 +90,7 @@ void runSequence() {
   moveSteps(R_EN,R_STEP,R_DIR,0.709965667,false);     // step 5
   drillZ(1.352856915,true);                           // step 6
   drillZ(1.352856915,false);                          // step 7
-  moveSteps(T_EN,T_STEP,T_DIR,1.714285714,true);      // step 8
+  moveSteps(T_EN,T_STEP,T_DIR,2.4,true);      // step 8
   drillZ(1.352856915,true);                           // step 9
   drillZ(1.352856915,false);                          // step 10
   moveSteps(T_EN,T_STEP,T_DIR,0.246392157,true);      // step 11
