@@ -65,7 +65,7 @@ class TestDispatch(unittest.TestCase):
         cv2.imshow("Frame 2", frame2)
 
         # Wait for key press to view both frames
-        cv2.waitKey(0)  # Press any key to close the frames
+        cv2.waitKey(2000)  # Press any key to close the frames
 
         # Close windows
         cv2.destroyAllWindows()
