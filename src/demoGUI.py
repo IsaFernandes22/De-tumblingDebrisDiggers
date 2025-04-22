@@ -10,7 +10,8 @@ from src import dispatch  # Make sure __init__.py exists in src/
 import os
 
 # ========== CONFIG ==========
-VIDEO_PATH = "/tests/test_videos/adrasJ2.mp4"  # Change if needed
+VIDEO_PATH = os.path.join(os.path.dirname(__file__), "../tests/test_videos/adrasJ2.mp4")
+VIDEO_PATH = os.path.abspath(VIDEO_PATH)
 RF_GPIO_PIN = 17  # GPIO pin connected to 433 MHz transmitter
 FPS_DELAY = 33    # ~30fps
 # ============================
