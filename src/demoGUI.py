@@ -16,7 +16,9 @@ previous_location = None
 previous_time = None
 
 # --- Camera Setup ---
-cap = cv2.VideoCapture(0)  # 0 = default camera
+#cap = cv2.VideoCapture(0)  # 0 = default camera
+cap = cv2.VideoCapture("/Users/isa/Desktop/De-tumblingDebrisDiggers/tests/test_videos/adrasJ2.mp4")
+
 
 # --- Tkinter GUI Setup ---
 root = tk.Tk()
