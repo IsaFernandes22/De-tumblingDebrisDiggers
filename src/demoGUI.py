@@ -11,8 +11,7 @@ import os
 VIDEO_PATH = os.path.join(os.path.dirname(__file__), "../tests/test_videos/adrasJ2.mp4")
 VIDEO_PATH = os.path.abspath(VIDEO_PATH)
 RF_GPIO_PIN = 17
-FPS_DELAY = 33  # ~30fps
-FRAME_BUFFER = 50  # Delay before GUI shows data
+FRAME_LIMIT = 50
 # ============================
 
 # --- RF Setup ---
@@ -28,6 +27,8 @@ if not cap.isOpened():
 previous_location = None
 previous_time = None
 frame_counter = 0
+last_velocity = (0.0, 0.0)
+last_location = (0, 0)
 
 # --- Tkinter GUI ---
 root = tk.Tk()
@@ -36,33 +37,46 @@ root.title("De-Tumbling Tracker")
 data_frame = Frame(root)
 data_frame.pack(pady=10)
 
-velocity_label = Label(data_frame, text="Velocity: Waiting...", font=("Helvetica", 16), fg="blue")
+velocity_label = Label(data_frame, text="Velocity: Processing...", font=("Helvetica", 16), fg="blue")
 velocity_label.pack(side="left", padx=20)
 
-location_label = Label(data_frame, text="Location: Waiting...", font=("Helvetica", 16), fg="green")
+location_label = Label(data_frame, text="Location: Processing...", font=("Helvetica", 16), fg="green")
 location_label.pack(side="left", padx=20)
 
 video_label = Label(root)
 video_label.pack()
 
-# --- Update Loop ---
+# --- Frame Processing Loop ---
 def update_frame():
-    global previous_location, previous_time, frame_counter
+    global previous_location, previous_time, frame_counter, last_velocity, last_location
+
+    if frame_counter >= FRAME_LIMIT:
+        # Show final values after processing is done
+        velocity_label.config(text=f"Velocity: ({last_velocity[0]:.2f}, {last_velocity[1]:.2f})")
+        location_label.config(text=f"Location: ({last_location[0]}, {last_location[1]})")
+        return  # Stop updating
 
     ret, frame = cap.read()
     if not ret:
+        print("Early end of video.")
         on_close()
         return
 
     velocity, location, previous_time = dispatch.processFrame(frame, previous_location, previous_time)
     previous_location = location
     frame_counter += 1
+    last_velocity = velocity
+    last_location = location
 
-    # Only start updating after buffer
-    if frame_counter >= FRAME_BUFFER:
-        velocity_label.config(text=f"Velocity: ({velocity[0]:.2f}, {velocity[1]:.2f})")
-        location_label.config(text=f"Location: ({location[0]}, {location[1]})")
+    # Display current frame
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    img = Image.fromarray(frame_rgb)
+    imgtk = ImageTk.PhotoImage(image=img)
+    video_label.imgtk = imgtk
+    video_label.configure(image=imgtk)
 
+    # (Optional) Send final result to Arduino only once at frame 50
+    if frame_counter == FRAME_LIMIT:
         try:
             int_vx = int(velocity[0] * 100)
             int_vy = int(velocity[1] * 100)
@@ -72,20 +86,10 @@ def update_frame():
         except:
             pass
 
-    else:
-        velocity_label.config(text=f"Velocity: Warming up... ({frame_counter}/50)")
-        location_label.config(text=f"Location: Warming up...")
+    # Schedule next frame
+    root.after(33, update_frame)
 
-    # Show video
-    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    img = Image.fromarray(frame_rgb)
-    imgtk = ImageTk.PhotoImage(image=img)
-    video_label.imgtk = imgtk
-    video_label.configure(image=imgtk)
-
-    root.after(FPS_DELAY, update_frame)
-
-# --- Shutdown ---
+# --- Clean Exit ---
 def on_close():
     cap.release()
     rfdevice.cleanup()
@@ -93,6 +97,6 @@ def on_close():
 
 root.protocol("WM_DELETE_WINDOW", on_close)
 
-# --- Launch GUI ---
+# --- Start GUI ---
 update_frame()
 root.mainloop()
