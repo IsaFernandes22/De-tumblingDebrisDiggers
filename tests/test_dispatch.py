@@ -65,7 +65,7 @@ class TestDispatch(unittest.TestCase):
         cv2.imshow("Frame 2", frame2)
 
         # Wait for key press to view both frames
-        cv2.waitKey(2000)  # Press any key to close the frames
+        cv2.waitKey(6000)  # Press any key to close the frames
 
         # Close windows
         cv2.destroyAllWindows()
@@ -109,7 +109,7 @@ class TestDispatch(unittest.TestCase):
         # **This should now pass since we ensured motion**
         self.assertNotEqual(velocity, (0, 0), "Velocity should not be (0, 0) if there is motion")
 
-        cv2.waitKey(2000)
+        cv2.waitKey(6000)
         cv2.destroyAllWindows()
 
     def tearDown(self):
