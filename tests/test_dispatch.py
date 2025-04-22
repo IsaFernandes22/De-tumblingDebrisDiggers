@@ -109,7 +109,7 @@ class TestDispatch(unittest.TestCase):
         # **This should now pass since we ensured motion**
         self.assertNotEqual(velocity, (0, 0), "Velocity should not be (0, 0) if there is motion")
 
-        cv2.waitKey(0)
+        cv2.waitKey(2000)
         cv2.destroyAllWindows()
 
     def tearDown(self):
