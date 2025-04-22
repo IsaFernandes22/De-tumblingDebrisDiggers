@@ -11,7 +11,6 @@ import os
 VIDEO_PATH = os.path.join(os.path.dirname(__file__), "../tests/test_videos/adrasJ2.mp4")
 VIDEO_PATH = os.path.abspath(VIDEO_PATH)
 RF_GPIO_PIN = 17
-FRAME_LIMIT = 50
 # ============================
 
 # --- RF Setup ---
@@ -26,9 +25,7 @@ if not cap.isOpened():
 # --- State ---
 previous_location = None
 previous_time = None
-frame_counter = 0
-last_velocity = (0.0, 0.0)
-last_location = (0, 0)
+stopped = False
 
 # --- Tkinter GUI ---
 root = tk.Tk()
@@ -48,45 +45,50 @@ video_label.pack()
 
 # --- Frame Processing Loop ---
 def update_frame():
-    global previous_location, previous_time, frame_counter, last_velocity, last_location
+    global previous_location, previous_time, stopped
 
-    if frame_counter >= FRAME_LIMIT:
-        # Show final values after processing is done
-        velocity_label.config(text=f"Velocity: ({last_velocity[0]:.2f}, {last_velocity[1]:.2f})")
-        location_label.config(text=f"Location: ({last_location[0]}, {last_location[1]})")
-        return  # Stop updating
+    if stopped:
+        return  # Do nothing after stopping
 
     ret, frame = cap.read()
     if not ret:
-        print("Early end of video.")
+        print("End of video reached without non-zero velocity.")
         on_close()
         return
 
     velocity, location, previous_time = dispatch.processFrame(frame, previous_location, previous_time)
     previous_location = location
-    frame_counter += 1
-    last_velocity = velocity
-    last_location = location
 
-    # Display current frame
+    vx, vy = velocity
+    non_zero = abs(vx) > 0.01 or abs(vy) > 0.01  # small threshold to avoid noise
+
+    # Show frame
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     img = Image.fromarray(frame_rgb)
     imgtk = ImageTk.PhotoImage(image=img)
     video_label.imgtk = imgtk
     video_label.configure(image=imgtk)
 
-    # (Optional) Send final result to Arduino only once at frame 50
-    if frame_counter == FRAME_LIMIT:
+    # Update GUI
+    velocity_label.config(text=f"Velocity: ({vx:.2f}, {vy:.2f})")
+    location_label.config(text=f"Location: ({location[0]}, {location[1]})")
+
+    if non_zero:
+        stopped = True  # stop future updates
+        print("Velocity detected, stopping video.")
+
+        # Send once via RF
         try:
-            int_vx = int(velocity[0] * 100)
-            int_vy = int(velocity[1] * 100)
+            int_vx = int(vx * 100)
+            int_vy = int(vy * 100)
             rfdevice.tx_code(int_vx)
             time.sleep(0.05)
             rfdevice.tx_code(int_vy)
         except:
             pass
 
-    # Schedule next frame
+        return  # stop here
+
     root.after(33, update_frame)
 
 # --- Clean Exit ---
