@@ -11,6 +11,7 @@ import os
 VIDEO_PATH = os.path.join(os.path.dirname(__file__), "../tests/test_videos/adrasJ2.mp4")
 VIDEO_PATH = os.path.abspath(VIDEO_PATH)
 RF_GPIO_PIN = 17
+VELOCITY_THRESHOLD = 0.01
 # ============================
 
 # --- RF Setup ---
@@ -48,11 +49,11 @@ def update_frame():
     global previous_location, previous_time, stopped
 
     if stopped:
-        return  # Do nothing after stopping
+        return
 
     ret, frame = cap.read()
     if not ret:
-        print("End of video reached without non-zero velocity.")
+        print("End of video reached without detecting motion.")
         on_close()
         return
 
@@ -60,24 +61,20 @@ def update_frame():
     previous_location = location
 
     vx, vy = velocity
-    non_zero = abs(vx) > 0.01 or abs(vy) > 0.01  # small threshold to avoid noise
+    non_zero = abs(vx) > VELOCITY_THRESHOLD or abs(vy) > VELOCITY_THRESHOLD
 
-    # Show frame
+    # Convert and display video frame
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     img = Image.fromarray(frame_rgb)
     imgtk = ImageTk.PhotoImage(image=img)
     video_label.imgtk = imgtk
     video_label.configure(image=imgtk)
 
-    # Update GUI
-    velocity_label.config(text=f"Velocity: ({vx:.2f}, {vy:.2f})")
-    location_label.config(text=f"Location: ({location[0]}, {location[1]})")
-
     if non_zero:
-        stopped = True  # stop future updates
-        print("Velocity detected, stopping video.")
+        # Final update
+        velocity_label.config(text=f"Velocity: ({vx:.2f}, {vy:.2f})")
+        location_label.config(text=f"Location: ({location[0]}, {location[1]})")
 
-        # Send once via RF
         try:
             int_vx = int(vx * 100)
             int_vy = int(vy * 100)
@@ -87,7 +84,12 @@ def update_frame():
         except:
             pass
 
-        return  # stop here
+        print("Velocity detected. Display frozen.")
+        stopped = True
+        return
+    else:
+        velocity_label.config(text="Velocity: Processing...")
+        location_label.config(text="Location: Processing...")
 
     root.after(33, update_frame)
 
@@ -99,6 +101,6 @@ def on_close():
 
 root.protocol("WM_DELETE_WINDOW", on_close)
 
-# --- Start GUI ---
+# --- Launch GUI ---
 update_frame()
 root.mainloop()
