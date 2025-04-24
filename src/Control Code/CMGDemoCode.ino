@@ -2,13 +2,13 @@
 #include <avr/wdt.h>
 
 // --- Pin Definitions ---
-const int enPin = 2;
-const int stepPin = 3;
-const int dirPin = 4;
-const int dcDirPin = 8;
-const int dcPwmPin = 9;
-const int buttonPin = 52;
-const int potPin = A5;
+const int enPin = 30;
+const int stepPin = 31;
+const int dirPin = 32;
+const int dcDirPin = 53;
+const int dcPwmPin = 52;
+const int buttonPin = A5;
+const int potPin = A0;
 
 // --- Stepper Config ---
 const int stepDelay = 1000;
@@ -29,7 +29,6 @@ unsigned long lastPotRead = 0;
 const int POT_READ_INTERVAL = 50;
 const int DEADBAND = 15;
 
-// --- Setup ---
 void setup() {
   Serial.begin(115200);
   while (!Serial);
@@ -46,50 +45,38 @@ void setup() {
   analogWrite(dcPwmPin, 0);
   wdt_disable();
 
-  Serial.println("Waiting for button press...");
-
-  // Wait for button press
-  while (digitalRead(buttonPin) == HIGH);
-
-  Serial.println("Button pressed!");
-
-  // Emergency stop functionality
   if (Serial.available()) {
     char cmd = Serial.read();
     if (cmd == 'e') {
       emergencyStop();
-      return; // Stop the rest of the program in case of emergency
+      return;
     }
   }
 
-  // Move to 90 degrees
-  moveToAngle(90);
-   // Start DC Motor
+  // Start-up test sequence
+  moveToAngle(0);           // Always counterclockwise
+  delay(2000);
+
+  setDcMotor(true, 0);
+  moveToAngle(90);          // Clockwise
   setDcMotor(true, MAX_DC_SPEED);
-
-  // Wait 1 minute
-  delay(30000);  // Spin for 1 minute
-
-  // Stop DC motor
+  delay(10000);             // Run motor briefly
   setDcMotor(true, 0);
 
-  // Move to 180 degrees
-  moveToAngle(180);
+  delay(10000);
 
+  setDcMotor(true, 0);
+  moveToAngle(180);         // Clockwise
   setDcMotor(true, MAX_DC_SPEED);
-
-  // Wait 1 minute
-  delay(30000);  // Spin for 1 minute
-
-  // Stop DC motor
+  delay(10000);
   setDcMotor(true, 0);
 
-  // Move to 0 degrees
-  moveToAngle(0);
+  delay(10000);
 
-  // Stop DC Motor
+  moveToAngle(0);           // Counterclockwise again
   setDcMotor(true, 0);
   digitalWrite(enPin, HIGH);
+
   Serial.println("Sequence complete.");
 }
 
@@ -99,19 +86,25 @@ void moveToAngle(float target) {
   updatePosition();
 
   float current = currentPosition;
-  float cwDist = fmod(targetPosition - current + 360.0, 360.0);
-  float ccwDist = fmod(current - targetPosition + 360.0, 360.0);
-  bool clockwise = cwDist <= ccwDist;
+  bool clockwise = (targetPosition != 0); // now: any non-zero goes CW, 0 goes CCW
 
   digitalWrite(enPin, LOW);
   digitalWrite(dirPin, clockwise ? HIGH : LOW);
 
-  Serial.print("Rotating to ");
+  Serial.print("Rotating ");
+  Serial.print(clockwise ? "CW" : "CCW");
+  Serial.print(" to ");
   Serial.print(targetPosition);
   Serial.println(" degrees...");
 
   while (!atTarget()) {
     updatePosition();
+
+    Serial.print("Current: ");
+    Serial.print(currentPosition);
+    Serial.print(" | Target: ");
+    Serial.println(targetPosition);
+
     stepMotor(clockwise);
   }
 
@@ -130,7 +123,7 @@ void updatePosition() {
 
     if (abs(raw - lastRaw) > DEADBAND) {
       lastRaw = raw;
-      if (raw >= 175 && raw < 200)
+      if (raw >= 160 && raw < 186)
         currentPosition = 0;
       else if (raw >= 480 && raw < 540)
         currentPosition = 90;
@@ -139,6 +132,11 @@ void updatePosition() {
       else
         currentPosition = map(raw, 175, 888, 0, 180);
     }
+
+    Serial.print("Potentiometer Raw: ");
+    Serial.print(raw);
+    Serial.print(" | Interpreted Degrees: ");
+    Serial.println(currentPosition);
   }
 }
 
@@ -152,7 +150,7 @@ bool atTarget() {
 // --- Step Pulse ---
 void stepMotor(bool dir) {
   if (micros() - lastStepTime >= stepDelay) {
-    digitalWrite(dirPin, dir);
+    digitalWrite(dirPin, !dir);  // correct direction
     digitalWrite(stepPin, HIGH);
     delayMicroseconds(pulseWidth);
     digitalWrite(stepPin, LOW);
@@ -178,6 +176,6 @@ void emergencyStop() {
   digitalWrite(enPin, HIGH);
 }
 
-void loop(){
+void loop() {
   updatePosition();
 }
